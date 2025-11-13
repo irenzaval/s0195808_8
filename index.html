@@ -130,6 +130,11 @@ font-weight: 500;
 color: #2c3e50;
 }
 
+.required::after {
+content: " *";
+color: #e74c3c;
+}
+
 input, textarea {
 width: 100%;
 padding: 10px;
@@ -147,6 +152,17 @@ outline: none;
 textarea {
 min-height: 100px;
 resize: vertical;
+}
+
+.error {
+border-color: #e74c3c !important;
+}
+
+.error-message {
+color: #e74c3c;
+font-size: 12px;
+margin-top: 5px;
+display: none;
 }
 
 .checkbox-group {
@@ -210,7 +226,7 @@ color: #155724;
 border: 1px solid #c3e6cb;
 }
 
-.error {
+.error-message-block {
 background-color: #f8d7da;
 color: #721c24;
 border: 1px solid #f5c6cb;
@@ -251,34 +267,40 @@ padding: 15px;
 <div class="form-container">
 <form id="feedbackForm">
 <div class="form-group">
-<label for="fullName">ФИО *</label>
+<label for="fullName" class="required">ФИО</label>
 <input type="text" id="fullName" name="fullName" required>
+<div class="error-message" id="fullNameError">ФИО не должно содержать цифр</div>
 </div>
 
 <div class="form-group">
-<label for="email">Email *</label>
+<label for="email" class="required">Email</label>
 <input type="email" id="email" name="email" required>
+<div class="error-message" id="emailError">Введите корректный email адрес</div>
 </div>
 
 <div class="form-group">
-<label for="phone">Телефон</label>
-<input type="tel" id="phone" name="phone">
+<label for="phone" class="required">Телефон</label>
+<input type="tel" id="phone" name="phone" required>
+<div class="error-message" id="phoneError">Телефон должен содержать только цифры и знак +</div>
 </div>
 
 <div class="form-group">
-<label for="organization">Организация</label>
-<input type="text" id="organization" name="organization">
+<label for="organization" class="required">Организация</label>
+<input type="text" id="organization" name="organization" required>
+<div class="error-message" id="organizationError">Поле обязательно для заполнения</div>
 </div>
 
 <div class="form-group">
-<label for="message">Сообщение *</label>
+<label for="message" class="required">Сообщение</label>
 <textarea id="message" name="message" required></textarea>
+<div class="error-message" id="messageError">Поле обязательно для заполнения</div>
 </div>
 
 <div class="checkbox-group">
 <input type="checkbox" id="consent" name="consent" required>
-<label for="consent">Я согласен с <a href="#" target="_blank">политикой обработки персональных данных</a> *</label>
+<label for="consent" class="required">Я согласен с <a href="#" target="_blank">политикой обработки персональных данных</a></label>
 </div>
+<div class="error-message" id="consentError">Необходимо ваше согласие</div>
 
 <button type="submit" class="btn-submit" id="submitBtn">Отправить</button>
 
@@ -286,7 +308,7 @@ padding: 15px;
 Сообщение успешно отправлено!
 </div>
 
-<div class="message error" id="errorMessage">
+<div class="message error-message-block" id="errorMessage">
 Произошла ошибка при отправке. Пожалуйста, попробуйте позже.
 </div>
 </form>
@@ -303,6 +325,14 @@ const feedbackForm = document.getElementById('feedbackForm');
 const submitBtn = document.getElementById('submitBtn');
 const successMessage = document.getElementById('successMessage');
 const errorMessage = document.getElementById('errorMessage');
+
+// Элементы для ошибок
+const fullNameError = document.getElementById('fullNameError');
+const emailError = document.getElementById('emailError');
+const phoneError = document.getElementById('phoneError');
+const organizationError = document.getElementById('organizationError');
+const messageError = document.getElementById('messageError');
+const consentError = document.getElementById('consentError');
 
 // Ключ для localStorage
 const STORAGE_KEY = 'feedbackFormData';
@@ -379,9 +409,98 @@ function clearFormData() {
 localStorage.removeItem(STORAGE_KEY);
 }
 
+// Валидация формы
+function validateForm() {
+let isValid = true;
+
+// Сброс ошибок
+resetErrors();
+
+// Проверка ФИО
+const fullName = document.getElementById('fullName').value;
+if (!fullName) {
+showError('fullName', 'Поле обязательно для заполнения');
+isValid = false;
+} else if (/\d/.test(fullName)) {
+showError('fullName', 'ФИО не должно содержать цифр');
+isValid = false;
+}
+
+// Проверка email
+const email = document.getElementById('email').value;
+if (!email) {
+showError('email', 'Поле обязательно для заполнения');
+isValid = false;
+} else if (!email.includes('@')) {
+showError('email', 'Введите корректный email адрес');
+isValid = false;
+}
+
+// Проверка телефона
+const phone = document.getElementById('phone').value;
+if (!phone) {
+showError('phone', 'Поле обязательно для заполнения');
+isValid = false;
+} else if (!/^[\d+]+$/.test(phone)) {
+showError('phone', 'Телефон должен содержать только цифры и знак +');
+isValid = false;
+}
+
+// Проверка организации
+const organization = document.getElementById('organization').value;
+if (!organization) {
+showError('organization', 'Поле обязательно для заполнения');
+isValid = false;
+}
+
+// Проверка сообщения
+const message = document.getElementById('message').value;
+if (!message) {
+showError('message', 'Поле обязательно для заполнения');
+isValid = false;
+}
+
+// Проверка согласия
+const consent = document.getElementById('consent').checked;
+if (!consent) {
+showError('consent', 'Необходимо ваше согласие');
+isValid = false;
+}
+
+return isValid;
+}
+
+// Показать ошибку
+function showError(fieldName, message) {
+const field = document.getElementById(fieldName);
+const errorElement = document.getElementById(fieldName + 'Error');
+
+field.classList.add('error');
+errorElement.textContent = message;
+errorElement.style.display = 'block';
+}
+
+// Сброс ошибок
+function resetErrors() {
+const errorElements = document.querySelectorAll('.error-message');
+errorElements.forEach(element => {
+element.style.display = 'none';
+});
+
+const fields = document.querySelectorAll('input, textarea');
+fields.forEach(field => {
+field.classList.remove('error');
+});
+}
+
 // Обработка отправки формы
 feedbackForm.addEventListener('submit', async (e) => {
 e.preventDefault();
+
+// Валидация формы
+if (!validateForm()) {
+return;
+}
 
 // Показать индикатор загрузки
 submitBtn.disabled = true;
@@ -418,6 +537,7 @@ if (response.ok) {
 successMessage.style.display = 'block';
 feedbackForm.reset();
 clearFormData();
+resetErrors();
 } else {
 throw new Error('Ошибка сервера');
 }
@@ -435,6 +555,43 @@ submitBtn.textContent = 'Отправить';
 // Сохранение данных формы при изменении
 feedbackForm.addEventListener('input', saveFormData);
 feedbackForm.addEventListener('change', saveFormData);
+
+// Валидация в реальном времени
+document.getElementById('fullName').addEventListener('blur', () => {
+const fullName = document.getElementById('fullName').value;
+if (fullName && /\d/.test(fullName)) {
+showError('fullName', 'ФИО не должно содержать цифр');
+} else {
+resetFieldError('fullName');
+}
+});
+
+document.getElementById('email').addEventListener('blur', () => {
+const email = document.getElementById('email').value;
+if (email && !email.includes('@')) {
+showError('email', 'Введите корректный email адрес');
+} else {
+resetFieldError('email');
+}
+});
+
+document.getElementById('phone').addEventListener('blur', () => {
+const phone = document.getElementById('phone').value;
+if (phone && !/^[\d+]+$/.test(phone)) {
+showError('phone', 'Телефон должен содержать только цифры и знак +');
+} else {
+resetFieldError('phone');
+}
+});
+
+// Сброс ошибки для конкретного поля
+function resetFieldError(fieldName) {
+const field = document.getElementById(fieldName);
+const errorElement = document.getElementById(fieldName + 'Error');
+
+field.classList.remove('error');
+errorElement.style.display = 'none';
+}
 </script>
 </body>
 </html>
