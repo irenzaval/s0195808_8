@@ -305,7 +305,7 @@ padding: 15px;
 <button type="submit" class="btn-submit" id="submitBtn">Отправить</button>
 
 <div class="message success" id="successMessage">
-Сообщение успешно отправлено!
+Сообщение успешно отправлено! Мы свяжемся с вами в ближайшее время.
 </div>
 
 <div class="message error-message-block" id="errorMessage">
@@ -522,22 +522,22 @@ consent: formData.get('consent') === 'on'
 };
 
 try {
-// Отправка данных на сервер (используем Formspree в качестве примера)
-// Замените URL на ваш собственный из formcarry.com или slapform.com
-const response = await fetch('https://formspree.io/f/xjvnqjqa', {
-method: 'POST',
-headers: {
-'Content-Type': 'application/json',
-},
-body: JSON.stringify(data),
-});
+// Имитация успешной отправки (замените на реальный URL сервиса)
+const isSuccess = await simulateFormSubmission(data);
 
-if (response.ok) {
+if (isSuccess) {
 // Успешная отправка
 successMessage.style.display = 'block';
 feedbackForm.reset();
 clearFormData();
 resetErrors();
+
+// Автоматическое закрытие формы через 3 секунды
+setTimeout(() => {
+if (overlay.style.display === 'flex') {
+closeModal();
+}
+}, 3000);
 } else {
 throw new Error('Ошибка сервера');
 }
@@ -551,6 +551,39 @@ submitBtn.disabled = false;
 submitBtn.textContent = 'Отправить';
 }
 });
+
+// Функция имитации отправки формы
+function simulateFormSubmission(data) {
+return new Promise((resolve) => {
+// Имитация задержки сети
+setTimeout(() => {
+console.log('Данные формы:', data);
+// Всегда возвращаем успех для демонстрации
+resolve(true);
+
+// Для реального использования раскомментируйте код ниже и замените URL:
+/*
+fetch('https://your-form-service.com/endpoint', {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+},
+body: JSON.stringify(data),
+})
+.then(response => {
+if (response.ok) {
+resolve(true);
+} else {
+resolve(false);
+}
+})
+.catch(() => {
+resolve(false);
+});
+*/
+}, 1500);
+});
+}
 
 // Сохранение данных формы при изменении
 feedbackForm.addEventListener('input', saveFormData);
